@@ -11,7 +11,7 @@ export const useAuth = () => {
 
 const AuthProvider = ({ children }) => {
     async function signUp ({email, password}) {
-        const key = "AIzaSyDaetK0RVHOuTygMLY_M0U55PvDJrsUEQA"
+        const key = ""
         const URL = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${key}`
         const {data} = await httpAuth.post(URL, {email, password, returnSecureToken:true})
         console.log(data)
