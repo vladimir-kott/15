@@ -1,58 +1,55 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import PropTypes from "prop-types";
+import { toast } from "react-toastify";
 import axios from "axios";
 import userService from "../services/user.service";
-import { useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import { setTokens } from "../services/localStorage.service";
 
-const httpAuth = axios.create()
+const httpAuth = axios.create();
 const AuthContext = React.createContext();
 
 export const useAuth = () => {
     return useContext(AuthContext);
 };
 
-const TOKEN_KEY = "jwt-token"
-const REFRESH_KEY = "jwt-refresh-toke"
-const EXPIRES_KEY = "jwt-expires"
-
 const AuthProvider = ({ children }) => {
-
-    const [currentUser, setUser] = useState({})
+    const [currentUser, setUser] = useState({});
     const [error, setError] = useState(null);
 
-    function setTokens ({refreshToken, idToken, expiresIn = 3600}) {
-        const expiresDate = new Date().getTime() + expiresIn * 1000
-        localStorage.setItem(TOKEN_KEY, idToken)
-        localStorage.setItem(REFRESH_KEY, refreshToken)
-        localStorage.setItem(EXPIRES_KEY, expiresDate)
-    }
+    async function signUp({ email, password, ...rest }) {
+        const url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.REACT_APP_FIREBASE_KEY}`;
 
-    async function signUp ({email, password, ...rest}) {
-        const keyFireBasePrivate = "AIzaSyDaetK0RVHOuTygMLY_M0U55PvDJrsUEQA"
-        const URL = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.REACT_APP_FIREBASE_KEY}`
-
-        try{
-            const {data} = await httpAuth.post(URL, {email, password, returnSecureToken:true})
-            setTokens(data)
-            await createUser({_id:data.localId, email, ...rest})
-            console.log(data)
-        }
-        catch{
+        try {
+            const { data } = await httpAuth.post(url, {
+                email,
+                password,
+                returnSecureToken: true
+            });
+            setTokens(data);
+            await createUser({ _id: data.localId, email, ...rest });
+        } catch (error) {
             errorCatcher(error);
+            const { code, message } = error.response.data.error;
+            console.log(code, message);
+            if (code === 400) {
+                if (message === "EMAIL_EXISTS") {
+                    const errorObject = {
+                        email: "Пользователь с таким Email уже существует"
+                    };
+                    throw errorObject;
+                }
+            }
+            // throw new Error
         }
     }
     async function createUser(data) {
-        try{
-            const {content} = userService.create(data)
-            setUser(content)
-        }
-        catch{
+        try {
+            const { content } = userService.create(data);
+            setUser(content);
+        } catch (error) {
             errorCatcher(error);
         }
-        
     }
-
     function errorCatcher(error) {
         const { message } = error.response.data;
         setError(message);
@@ -63,13 +60,12 @@ const AuthProvider = ({ children }) => {
             setError(null);
         }
     }, [error]);
-
     return (
-        <AuthContext.Provider value={{signUp, currentUser}}>
+        <AuthContext.Provider value={{ signUp, currentUser }}>
             {children}
         </AuthContext.Provider>
     );
-}
+};
 
 AuthProvider.propTypes = {
     children: PropTypes.oneOfType([
