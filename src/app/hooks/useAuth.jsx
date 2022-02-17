@@ -58,9 +58,15 @@ const AuthProvider = ({ children }) => {
             const { code, message } = error.response.data.error;
             console.log(code, message);
             if (code === 400) {
-                if (message === "EMAIL_EXISTS") {
+                if (message === "EMAIL_NOT_FOUND") {
                     const errorObject = {
-                        email: "Пользователь с таким Email уже существует"
+                        email: "Пользователь с таким Email не существует"
+                    };
+                    throw errorObject;
+                }
+                else if (message === "INVALID_PASSWORDD") {
+                    const errorObject = {
+                        password: "Не верный пароль"
                     };
                     throw errorObject;
                 }

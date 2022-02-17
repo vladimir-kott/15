@@ -69,7 +69,7 @@ const LoginForm = () => {
             setErrors(error)
         }
 
-        console.log("data", data);
+        //console.log("data", data);
     };
 
     
